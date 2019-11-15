@@ -1,14 +1,16 @@
 version: '3.5'
 services:
-  web_dev:
+  storage_serv:
     build: .
     ports:
       - "4000:4000"
     volumes:
       - .:/app
+      - ./buffer:/buffer
     environment:
       - ENV=development
       - PORT=4000
+      - NSNAME=nameserver
 networks:
   default:
     name: web_dev

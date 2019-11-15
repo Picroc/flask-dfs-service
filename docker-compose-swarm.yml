@@ -1,0 +1,69 @@
+version: '3.7'
+
+services:
+  nameserver:
+    image: picroc/flask-dfs_ns:3.0
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      # placement:
+      #   constraints: [node.role == manager]
+    ports:
+      - 5000:5000
+    environment:
+      - ENV=development
+      - PORT=5000
+      - DB=mongodb://mongodb:27017/todoDev
+    volumes:
+      - app-volume:/ns
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo:latest
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      # placement:
+      #   constraints: [node.placement == worker]
+    environment:
+      - MONGO_DATA_DIR=/usr/data/db
+      - MONGO_LOG_DIR=/dev/null
+    volumes:
+      - data-volume:/usr/data/db
+    ports:
+      - 27017:27017
+    command: mongod --logpath=/dev/null
+
+  storage:
+    image: picroc/flask-dfs_ss:3.0
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+      # placement:
+      #   constraints: [node.placement == worker]
+    ports:
+      - 4000:4000
+    volumes:
+      - storage-volume:/ss
+      - storage-volume:/buffer
+    environment:
+      - ENV=development
+      - PORT=4000
+      - NSNAME=nameserver
+
+networks:
+  default:
+    name: dfs
+    driver: overlay
+
+volumes:
+  app-volume:
+    driver: local
+  data-volume:
+    driver: local
+  storage-volume:
+    driver: local
