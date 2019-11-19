@@ -5,6 +5,7 @@ import os
 import sys
 import shutil
 import glob
+from threading import Timer
 
 app = Flask(__name__)
 
@@ -24,6 +25,8 @@ def init():
         print('Response from server: ', res.text, file=sys.stderr)
     except:
         print('Error occured', file=sys.stderr)
+        s = Timer(5.0, init)
+        s.start()
 
 
 @app.route('/ping')

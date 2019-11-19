@@ -2,7 +2,7 @@ version: '3.7'
 
 services:
   nameserver:
-    image: picroc/flask-dfs_ns:3.0
+    image: picroc/dfs_ns:latest
     deploy:
       replicas: 1
       restart_policy:
@@ -38,7 +38,7 @@ services:
     command: mongod --logpath=/dev/null
 
   storage:
-    image: picroc/flask-dfs_ss:3.0
+    image: picroc/dfs_ss:latest
     deploy:
       replicas: 2
       restart_policy:

@@ -111,7 +111,7 @@ def send_file_to_servers(filename, retries):
             return
         random_servers = [available_servers[0]]
     else:
-        random_servers = random.choices(available_servers, k=2)
+        random_servers = random.sample(available_servers, 2)
 
     try:
         for server in random_servers:
