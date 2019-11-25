@@ -1,9 +1,7 @@
 # DFS implementation using Flask and MongoDB
 ### Distributed Systems course, Innopolis University, Fall 2019
 
-Only nameserver is operable now
-
-To set up everything, run from the nameserver directory
+To set up everything, run from the project directory
 ```bash
 docker stack deploy --compose-file docker-compose-swarm.yml dfs
 ```
