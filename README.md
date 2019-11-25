@@ -5,7 +5,7 @@ Only nameserver is operable now
 
 To set up everything, run from the nameserver directory
 ```bash
-docker-compose up --build
+docker stack deploy --compose-file docker-compose-swarm.yml dfs
 ```
 
 Server runs on http://localhost:5000
