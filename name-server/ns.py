@@ -7,8 +7,8 @@ import sys
 import datetime
 import random
 from bson.objectid import ObjectId
-from flask import Flask, request, jsonify, send_file
-from flask_pymongo import PyMongo
+from flask import Flask, request, jsonify, send_file, redirect
+from flask_pymongo import PyMongo, ObjectId
 import requests
 from time import sleep
 from shutil import copyfileobj
@@ -24,7 +24,6 @@ CORS(app, origins='*')
 
 
 available_servers = []
-log_file = open('ns.log', 'w+')
 
 
 def set_interval(func, sec):
@@ -44,11 +43,12 @@ def init_all():
         mongo.db.dirs.insert_one({'path': '/', 'files': [], 'dirs': []})
 
     available_servers = []
-    set_interval(check_connections, 30)
+    set_interval(check_connections, 10)
 
 
 def check_connections():
     global available_servers
+    disc_servers = []
     if available_servers == []:
         return
     for idx, server in enumerate(available_servers):
@@ -59,20 +59,23 @@ def check_connections():
                 sys.stderr.flush()
             else:
                 print_console('Server ', server['id'], ' is not active!')
+                # check_files_servers(server['id'])
+                disc_servers.append(server['id'])
                 sys.stderr.flush()
         except:
             print_console('Server ', server['id'], ' is not active!')
+            # check_files_servers(server['id'])
+            disc_servers.append(server['id'])
             available_servers[idx]['size'] = 0
             sys.stderr.flush()
 
     available_servers = [x for x in available_servers if x['size'] != 0]
+    for server in disc_servers:
+        check_files_servers(server)
 
 
 def print_console(*message):
-    global log_file
-    print(*message, file=log_file)
-    log_file.close()
-    log_file = open('ns.log', 'w+')
+    print(*message, file=sys.stderr)
 
 
 class JSONEncoder(json.JSONEncoder):
@@ -101,6 +104,7 @@ def send_file_to_servers(filename, retries):
         return None
 
     file = open(filename, 'rb')
+    file_size = os.path.getsize(filename)
 
     global available_servers
     if len(available_servers) < 2:
@@ -118,13 +122,13 @@ def send_file_to_servers(filename, retries):
             resp = requests.post(
                 'http://' + server['id'] + ':4000/transaction', files={'attach': file})
             if resp.json()['ok']:
-                continue
+                file.seek(0)
             else:
                 return send_file_to_servers(filename, retries - 1)
     except:
         return send_file_to_servers(filename, retries - 1)
 
-    return random_servers
+    return random_servers, file_size
 
 
 def send_file_to_exact_servers(filename, server1, server2):
@@ -164,13 +168,91 @@ def get_file_from_servers(file):
         try:
             print_console('Trying to get file from server 2')
             resp_file = requests.get(
-                'http://' + file['servers'][1]['id'] + ':5000/transaction?filename=' + str(file['_id']))
-            f = open(str(file['_id']), 'wb').write(resp_file.content)
-            f.close()
+                'http://' + file['servers'][1]['id'] + ':4000/transaction?filename=' + str(file['_id']))
+            with open(str(file['_id']), 'wb') as f:
+                print_console('Extracting file data')
+                resp_file.raw.decode_content = True
+                print_console('Copying file data')
+                print_console(resp_file.content)
+                f.write(resp_file.content)
+                print_console('Done')
+                f.close()
             return True
         except:
             print_console('Sorry mate')
             return False
+
+
+def replicate(file):
+    found = get_file_from_servers(file)
+    if not found:
+        print_console('Replication failed')
+        return
+
+    sent, file_size = send_file_to_servers(str(file['_id']), 3)
+    if not sent:
+        print_console('Replication failed')
+        return
+
+    file['servers'] = []
+    for server in sent:
+        file['servers'].append({
+            'id': server['id']
+        })
+
+    mongo.db.files.update_one({'_id': file['_id']}, {'$set': file})
+
+    print_console('Replication done!')
+
+
+def replicate_copy(file, new_dir, new_name):
+    new_id = ObjectId()
+    found = get_file_from_servers(file)
+    if not found:
+        print_console('Replication failed')
+        return
+
+    os.rename(str(file['_id']), str(new_id))
+
+    sent, file_size = send_file_to_servers(str(new_id), 3)
+    if not sent:
+        print_console('Replication failed')
+        return
+
+    file['servers'] = []
+    for server in sent:
+        file['servers'].append({
+            'id': server['id']
+        })
+
+    file['_id'] = new_id
+
+    file['dir'] = new_dir
+    file['name'] = new_name
+
+    mongo.db.files.insert_one(file)
+
+    to_update = mongo.db.dirs.find_one({'path': new_dir})
+    print_console('TO UPDATE', to_update)
+    to_update['files'].append(
+        {'name': new_name, 'id': new_id})
+
+    print_console('TO UPDATE', to_update)
+    mongo.db.dirs.update({'_id': to_update['_id']}, {
+        '$set': to_update}, upsert=False)
+
+    print_console('Replication done!')
+    return True
+
+
+def check_files_servers(disconnected_id):
+    for found in mongo.db.files.find({"servers": {'id': disconnected_id}}):
+        if len(available_servers) > 1:
+            replicate(found)
+        else:
+            print_console('No servers to replicate!')
+
+    print_console('DONE')
 
 
 @app.route('/join', methods=['POST'])
@@ -196,7 +278,7 @@ def init():
     mongo.db.drop_collection('dirs')
     mongo.db.drop_collection('files')
     init_all()
-    return jsonify({'ok': True, 'message': 'Successfully reconstructed dfs'})
+    return jsonify({'ok': True, 'message': 'Successfully reconstructed dfs'}), 200
 
 
 def recursive_dirs(root_path):
@@ -253,6 +335,15 @@ def remove_dir_from_dir(to_update, name):
         return None
 
     return to_update
+
+
+@app.route('/info')
+def info():
+    available_size = 0
+    for server in available_servers:
+        available_size += server['size']
+
+    return jsonify({'available_space': available_size, 'servers': [x['id'] for x in available_servers]})
 
 
 @app.route('/dirs', methods=['GET', 'POST', 'DELETE'])
@@ -345,7 +436,7 @@ def files():
         if req_file is None:
             return jsonify({'ok': False, 'message': 'No such file or directory'}), 400
 
-        return jsonify({'name': req_file['name'], 'dir': req_file['dir'], 'metadata': {'size': random.randint(0, 512)}, 'servers': req_file['servers']})
+        return jsonify({'name': req_file['name'], 'dir': req_file['dir'], 'metadata': {'size': req_file['metadata']['size']}, 'servers': req_file['servers']})
 
     query_data = request.get_json()
 
@@ -357,7 +448,7 @@ def files():
             return jsonify({'ok': False, 'message': 'File already exists'}), 400
 
         mongo.db.files.insert_one(
-            {'dir': query_data.get('dir'), 'name': query_data.get('name'), 'servers': [], 'metadata': {}})
+            {'dir': query_data.get('dir'), 'name': query_data.get('name'), 'servers': [], 'metadata': {'size': 0}})
 
         new_file = mongo.db.files.find_one(
             {'dir': query_data.get('dir'), 'name': query_data.get('name')})
@@ -395,6 +486,9 @@ def files():
 @app.route('/files/transaction', methods=['GET', 'POST'])
 def transaction():
     if request.method == 'POST':
+        if len(available_servers) == 0:
+            return jsonify({'ok': False, 'message': 'No storage servers connected'}), 500
+
         file = request.files.get('attach')
         if file is None:
             return jsonify({'ok': False, 'message': 'File is not attached'}), 400
@@ -415,7 +509,7 @@ def transaction():
             if sent:
                 return jsonify({'ok': True, 'message': 'File successfully sent'}), 200
 
-        sent = send_file_to_servers(str(filepath['_id']), 3)
+        sent, file_size = send_file_to_servers(str(filepath['_id']), 3)
 
         if sent is None:
             return jsonify({'ok': False, 'message': 'File was not sent, something went wrong on our side'}), 500
@@ -425,6 +519,8 @@ def transaction():
             filepath['servers'].append({
                 'id': server['id']
             })
+
+        filepath['metadata']['size'] = file_size
 
         mongo.db.files.update_one({'_id': filepath['_id']}, {'$set': filepath})
 
@@ -445,6 +541,49 @@ def transaction():
             return send_file(str(filepath['_id']), attachment_filename=filepath['name'])
         else:
             return jsonify({'ok': False, 'message': 'Failed to download file'}), 500
+
+
+@app.route('/files/move', methods=['POST'])
+def files_move():
+    query_data = request.get_json()
+
+    if query_data.get('dir') is None or query_data.get('name') is None or query_data.get('dest') is None or query_data.get('dest_name') is None:
+        return jsonify({'ok': False, 'message': 'No name or dir specified'}), 400
+
+    current = mongo.db.files.find_one(
+        {'dir': query_data.get('dir'), 'name': query_data.get('name')})
+
+    if current is None:
+        return jsonify({'ok': False, 'message': 'No such file or directory'}), 400
+
+    dist = mongo.db.dirs.find_one({'path': query_data.get('dest')})
+
+    if dist is None:
+        return jsonify({'ok': False, 'message': 'Destination folder does not exist'}), 400
+
+    if query_data.get('dir') == query_data.get('dest'):
+        if query_data.get('name') == query_data.get('dest_name'):
+            return jsonify({'ok': True, 'message': 'File was not changed'}), 200
+
+    check_exists = mongo.db.files.find_one(
+        {'dir': query_data.get('dest'), 'name': query_data.get('dest_name')})
+
+    if check_exists is not None:
+        return jsonify({'ok': False, 'message': 'File with that name already exists in destination derictory'}), 400
+
+    if query_data.get('copy') is not None:
+        done = replicate_copy(current, query_data.get(
+            'dest'), query_data.get('dest_name'))
+        if done is not None:
+            return jsonify({'ok': True, 'message': 'File successfully copied'}), 200
+        else:
+            return jsonify({'ok': False, 'message': 'File was not copied, something went wrong on uor side'}), 500
+
+    current['dir'] = query_data.get('dest')
+    current['name'] = query_data.get('dest_name')
+
+    mongo.db.files.update_one({'_id': current['_id']}, {'$set': current})
+    return jsonify({'ok': True, 'message': 'File successfully moved'}), 200
 
 
 app.config['MONGO_URI'] = os.environ.get('DB')

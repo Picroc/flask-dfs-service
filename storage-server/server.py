@@ -34,7 +34,7 @@ def pong():
     return 'PONG'
 
 
-@app.route('/transaction', methods=['GET', 'POST'])
+@app.route('/transaction', methods=['GET', 'POST', 'DELETE'])
 def upload_file():
     if request.method == 'POST':
         f = request.files.get('attach')
@@ -52,6 +52,18 @@ def upload_file():
             return send_file('buffer/' + secure_filename(filename))
         except:
             return jsonify({'ok': False, 'message': 'No such file'}), 400
+
+    if request.method == 'DELETE':
+        filename = request.args.get('filename')
+        if filename is None:
+            return jsonify({'ok': False, 'message': 'No filename specified'}), 400
+
+        try:
+            os.remove('buffer/' + secure_filename(filename))
+        except:
+            return jsonify({'ok': False, 'message': 'No such file'}), 400
+
+        return jsonify({'ok': True, 'message': 'File successfully deleted'}), 200
 
 
 init()

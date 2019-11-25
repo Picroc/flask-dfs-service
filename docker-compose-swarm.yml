@@ -40,7 +40,7 @@ services:
   storage:
     image: picroc/dfs_ss:latest
     deploy:
-      replicas: 2
+      replicas: 0
       restart_policy:
         condition: on-failure
       # placement:
