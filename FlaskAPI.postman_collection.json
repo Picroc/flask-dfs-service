@@ -1,0 +1,453 @@
+{
+	"info": {
+		"_postman_id": "1bab2c78-57f2-4956-b2c5-bf1cd977ae45",
+		"name": "FlaskAPI",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Init",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://18.197.132.179:5000/init",
+					"protocol": "http",
+					"host": [
+						"18",
+						"197",
+						"132",
+						"179"
+					],
+					"port": "5000",
+					"path": [
+						"init"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Index page",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://18.197.132.179:5000/",
+					"protocol": "http",
+					"host": [
+						"18",
+						"197",
+						"132",
+						"179"
+					],
+					"port": "5000",
+					"path": [
+						""
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "Index page",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://18.197.132.179:5000/",
+							"protocol": "http",
+							"host": [
+								"18",
+								"197",
+								"132",
+								"179"
+							],
+							"port": "5000",
+							"path": [
+								""
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "html",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "text/html; charset=utf-8"
+						},
+						{
+							"key": "Content-Length",
+							"value": "22"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "Server",
+							"value": "Werkzeug/0.16.0 Python/3.7.4"
+						},
+						{
+							"key": "Date",
+							"value": "Mon, 25 Nov 2019 17:29:37 GMT"
+						}
+					],
+					"cookie": [],
+					"body": "Hello from nameserver!"
+				}
+			]
+		},
+		{
+			"name": "Get dirs",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://18.197.132.179:5000/dirs?path=/",
+					"protocol": "http",
+					"host": [
+						"18",
+						"197",
+						"132",
+						"179"
+					],
+					"port": "5000",
+					"path": [
+						"dirs"
+					],
+					"query": [
+						{
+							"key": "path",
+							"value": "/"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create dir",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"dir\":\"/\",\n\t\"name\":\"myphoto\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/dirs",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"dirs"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete dir",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"dir\": \"/\",\n\t\"name\": \"ahah\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/dirs",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"dirs"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create file",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"name\": \"hello2.png\",\n\t\"dir\": \"/\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://18.197.132.179:5000/files",
+					"protocol": "http",
+					"host": [
+						"18",
+						"197",
+						"132",
+						"179"
+					],
+					"port": "5000",
+					"path": [
+						"files"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get file info",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://18.197.132.179:5000/files?path=/hello2.png",
+					"protocol": "http",
+					"host": [
+						"18",
+						"197",
+						"132",
+						"179"
+					],
+					"port": "5000",
+					"path": [
+						"files"
+					],
+					"query": [
+						{
+							"key": "path",
+							"value": "/hello2.png"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete file",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"dir\":\"/\",\n\t\"name\":\"myfilenew.png\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/files",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"files"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Write to file",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "attach",
+							"type": "file",
+							"src": "/Users/alexeylogachev/Pictures/maxresdefault.jpg"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://18.197.132.179:5000/files/transaction?dir=/&name=hello2.png",
+					"protocol": "http",
+					"host": [
+						"18",
+						"197",
+						"132",
+						"179"
+					],
+					"port": "5000",
+					"path": [
+						"files",
+						"transaction"
+					],
+					"query": [
+						{
+							"key": "dir",
+							"value": "/"
+						},
+						{
+							"key": "name",
+							"value": "hello2.png"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Read from file",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://18.197.132.179:5000/files/transaction?dir=/&name=hello2.png",
+					"protocol": "http",
+					"host": [
+						"18",
+						"197",
+						"132",
+						"179"
+					],
+					"port": "5000",
+					"path": [
+						"files",
+						"transaction"
+					],
+					"query": [
+						{
+							"key": "dir",
+							"value": "/"
+						},
+						{
+							"key": "name",
+							"value": "hello2.png"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Move",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"dir\": \"/\",\n\t\"name\": \"hello2.png\",\n\t\"dest\": \"/\",\n\t\"dest_name\": \"hello2copy.png\",\n\t\"copy\": \"\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://18.197.132.179:5000/files/move",
+					"protocol": "http",
+					"host": [
+						"18",
+						"197",
+						"132",
+						"179"
+					],
+					"port": "5000",
+					"path": [
+						"files",
+						"move"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Info",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://18.197.132.179:5000/info",
+					"protocol": "http",
+					"host": [
+						"18",
+						"197",
+						"132",
+						"179"
+					],
+					"port": "5000",
+					"path": [
+						"info"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}
