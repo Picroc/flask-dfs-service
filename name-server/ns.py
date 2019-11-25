@@ -556,6 +556,7 @@ def files_move():
     if current is None:
         return jsonify({'ok': False, 'message': 'No such file or directory'}), 400
 
+    current_dir = mongo.db.dirs.find_one({'path': query_data.get('dir')})
     dist = mongo.db.dirs.find_one({'path': query_data.get('dest')})
 
     if dist is None:
@@ -582,7 +583,16 @@ def files_move():
     current['dir'] = query_data.get('dest')
     current['name'] = query_data.get('dest_name')
 
+    current_dir['files'] = [x for x in current_dir['files']
+                            if x['name'] != query_data.get('name')]
+    dist['files'].append(
+        {'name': query_data.get('dest_name'), 'id': current['_id']})
+
     mongo.db.files.update_one({'_id': current['_id']}, {'$set': current})
+    mongo.db.dirs.update_one({'_id': current_dir['_id']}, {
+                             '$set': current_dir})
+    mongo.db.dirs.update_one({'_id': dist['_id']}, {'$set': dist})
+
     return jsonify({'ok': True, 'message': 'File successfully moved'}), 200
 
 
