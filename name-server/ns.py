@@ -583,8 +583,17 @@ def files_move():
     current['dir'] = query_data.get('dest')
     current['name'] = query_data.get('dest_name')
 
+    print_console(current_dir['files'])
+    print_console('NAME AHAHA', query_data.get('name'))
+
     current_dir['files'] = [x for x in current_dir['files']
                             if x['name'] != query_data.get('name')]
+
+    print_console(current_dir['files'])
+
+    if query_data.get('dir') == query_data.get('dest'):
+        dist['files'] = [x for x in current_dir['files']]
+
     dist['files'].append(
         {'name': query_data.get('dest_name'), 'id': current['_id']})
 
